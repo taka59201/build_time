@@ -6,12 +6,15 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write   # ← PRコメント投稿に必要
+  pull-requests: write   # PRコメント投稿に必要
 
 jobs:
   cache-enabled:
     name: Build with cache
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src   # ★ リポジトリ内の Laravel プロジェクト位置
     outputs:
       composer_sec: ${{ steps.times.outputs.composer_sec }}
       npmci_sec:    ${{ steps.times.outputs.npmci_sec }}
@@ -26,14 +29,14 @@ jobs:
           extensions: intl, zip
           coverage: none
 
-      # Composer cache
+      # Composer cache（有効）
       - name: Cache Composer
         uses: actions/cache@v4
         with:
           path: |
             ~/.composer/cache
-            vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+            src/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('src/composer.lock') }}
           restore-keys: |
             composer-${{ runner.os }}-
 
@@ -58,12 +61,12 @@ jobs:
         with:
           node-version: '20'
 
-      # npm cache
+      # npm cache（有効）
       - name: Cache npm
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ runner.os }}-${{ hashFiles('src/package-lock.json') }}
           restore-keys: |
             npm-${{ runner.os }}-
 
@@ -93,6 +96,9 @@ jobs:
   cache-disabled:
     name: Build without cache
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src   # ★ 同じく src を既定ディレクトリに
     outputs:
       composer_sec: ${{ steps.times.outputs.composer_sec }}
       npmci_sec:    ${{ steps.times.outputs.npmci_sec }}
@@ -170,11 +176,9 @@ jobs:
               npmci:    Number("${{ needs['cache-disabled'].outputs.npmci_sec }}"),
               build:    Number("${{ needs['cache-disabled'].outputs.build_sec }}"),
             };
-            const pad = s => String(s).padStart(4, ' ');
             const fmt = s => `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;
-
             const body =
-              `### ⏱ Build time comparison\n` +
+              `### ⏱ Build time comparison (working-directory: \`src\`)\n` +
               `| Step        | With cache | No cache |\n` +
               `|-------------|-----------:|---------:|\n` +
               `| Composer    | ${fmt(ce.composer)} | ${fmt(cd.composer)} |\n` +
@@ -186,8 +190,6 @@ jobs:
 
             const { context } = github;
             const number = context.payload.pull_request.number;
-
-            // 同じワークフローのコメントを上書き（sticky）にしたい場合はラベルなどで工夫
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
