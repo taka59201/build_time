@@ -31,7 +31,6 @@ jobs:
           extensions: intl, zip
           coverage: none
 
-      # Composer cache（有）
       - name: Cache Composer
         uses: actions/cache@v4
         with:
@@ -52,19 +51,15 @@ jobs:
 
       - name: Prepare Laravel (no DB)
         run: |
-          # .env を用意（cp -n 非依存）
           if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
           php artisan key:generate
 
-          # storage / bootstrap/cache を事前作成（view系で必要）
           mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache
           chmod -R 775 storage bootstrap/cache || true
 
-          # コンフィグ/ルートキャッシュ
           php artisan config:cache
           php artisan route:cache
 
-          # Blade が1つ以上ある場合のみ view:cache（無いと落ちる）
           if [ -d resources/views ] && find resources/views -type f -name '*.blade.php' | grep -q . ; then
             php artisan view:cache
           else
@@ -76,7 +71,6 @@ jobs:
         with:
           node-version: '20'
 
-      # npm cache（有）
       - name: Cache npm
         uses: actions/cache@v4
         with:
@@ -213,8 +207,7 @@ jobs:
               `**Total**: With cache = ${fmt(ce.composer+ce.npmci+ce.build)}, ` +
               `No cache = ${fmt(cd.composer+cd.npmci+cd.build)}\n`;
 
-            const { context } = github;
-            const number = context.payload.pull_request.number;
+            const number = context.payload.pull_request.number; // 再宣言せずに既存の context を利用
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
