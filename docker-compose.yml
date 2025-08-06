@@ -1,0 +1,39 @@
+services:
+  # MySQLのコンテナ
+  db:
+    build: ./docker/mysql
+    container_name: db-container
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql
+      - MYSQL_DATABASE=database
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - TZ=Asia/Tokyo
+    ports:
+      - '3306:3306'
+
+  # アプリのコンテナ
+  app:
+    build: ./docker/php
+    container_name: app-container
+    volumes:
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+      - ./src:/var/www
+    ports:
+      - '80:80'     # laravelのポート（バックエンド）
+      - '5173:5173'   # viteのポート（フロントエンド）
+    expose:
+      - 9003
+    depends_on:
+      - db
+
+  # MySQLのクライアントツール
+  adminer:
+    image: adminer:latest
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+
