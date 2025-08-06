@@ -53,13 +53,10 @@ jobs:
         run: |
           if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
           php artisan key:generate
-
           mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache
           chmod -R 775 storage bootstrap/cache || true
-
           php artisan config:cache
           php artisan route:cache
-
           if [ -d resources/views ] && find resources/views -type f -name '*.blade.php' | grep -q . ; then
             php artisan view:cache
           else
@@ -136,10 +133,8 @@ jobs:
         run: |
           if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
           php artisan key:generate
-
           mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache
           chmod -R 775 storage bootstrap/cache || true
-
           php artisan config:cache
           php artisan route:cache
           if [ -d resources/views ] && find resources/views -type f -name '*.blade.php' | grep -q . ; then
@@ -152,6 +147,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # ★ ここを追加：npm のキャッシュと node_modules を強制削除（No cache 側だけ）
+      - name: Purge npm caches (no-cache job)
+        run: |
+          npm cache clean --force || true
+          rm -rf ~/.npm || true
+          rm -rf node_modules || true
 
       - name: npm ci
         id: npmci
@@ -207,7 +209,7 @@ jobs:
               `**Total**: With cache = ${fmt(ce.composer+ce.npmci+ce.build)}, ` +
               `No cache = ${fmt(cd.composer+cd.npmci+cd.build)}\n`;
 
-            const number = context.payload.pull_request.number; // 再宣言せずに既存の context を利用
+            const number = context.payload.pull_request.number;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
