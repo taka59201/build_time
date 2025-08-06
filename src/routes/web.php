@@ -4,7 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\ItemController;
 
+Route::get('/items', [ItemController::class, 'index'])->name('items.index');
 /*
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -22,7 +24,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
-    return to_route('login'); 
+    return to_route('login');
 });
 
 Route::get('/dashboard', function () {
