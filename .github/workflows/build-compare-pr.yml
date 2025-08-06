@@ -13,11 +13,10 @@ jobs:
     name: Build with cache
     runs-on: ubuntu-latest
     env:
-      # Laravel が src/ 配下にある場合のベースパス（Laravel 側で参照されることがあります）
       APP_BASE_PATH: ${{ github.workspace }}/src
     defaults:
       run:
-        working-directory: src   # ← 以降の run はすべて src/ で実行
+        working-directory: src
     outputs:
       composer_sec: ${{ steps.times.outputs.composer_sec }}
       npmci_sec:    ${{ steps.times.outputs.npmci_sec }}
@@ -32,7 +31,7 @@ jobs:
           extensions: intl, zip
           coverage: none
 
-      # Composer cache（有効）
+      # Composer cache（有）
       - name: Cache Composer
         uses: actions/cache@v4
         with:
@@ -53,15 +52,19 @@ jobs:
 
       - name: Prepare Laravel (no DB)
         run: |
-          # cp -n の非移植性を避ける
+          # .env を用意（cp -n 非依存）
           if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
           php artisan key:generate
 
-          # コンフィグとルートのキャッシュは実行
+          # storage / bootstrap/cache を事前作成（view系で必要）
+          mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache
+          chmod -R 775 storage bootstrap/cache || true
+
+          # コンフィグ/ルートキャッシュ
           php artisan config:cache
           php artisan route:cache
 
-          # views ディレクトリが存在し、.blade.php が1つ以上あるときのみ view:cache
+          # Blade が1つ以上ある場合のみ view:cache（無いと落ちる）
           if [ -d resources/views ] && find resources/views -type f -name '*.blade.php' | grep -q . ; then
             php artisan view:cache
           else
@@ -73,7 +76,7 @@ jobs:
         with:
           node-version: '20'
 
-      # npm cache（有効）
+      # npm cache（有）
       - name: Cache npm
         uses: actions/cache@v4
         with:
@@ -139,6 +142,10 @@ jobs:
         run: |
           if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
           php artisan key:generate
+
+          mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache
+          chmod -R 775 storage bootstrap/cache || true
+
           php artisan config:cache
           php artisan route:cache
           if [ -d resources/views ] && find resources/views -type f -name '*.blade.php' | grep -q . ; then
