@@ -6,13 +6,23 @@
             <div class="text-sm text-gray-500">Last updated: {{ lastUpdated }}</div>
         </header>
 
-        <!-- 統計カード -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div v-for="stat in stats" :key="stat.label" class="bg-white rounded shadow p-4">
-                <div class="text-gray-500 text-sm">{{ stat.label }}</div>
-                <div class="text-2xl font-bold">{{ stat.value }}</div>
-                <div class="text-xs text-green-500" v-if="stat.trend > 0">▲ {{ stat.trend }}%</div>
-                <div class="text-xs text-red-500" v-else>▼ {{ stat.trend }}%</div>
+        <!-- グラフ群 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Sales Over Time</h2>
+                <canvas ref="lineChart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Product Distribution</h2>
+                <canvas ref="pieChart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Monthly Revenue</h2>
+                <canvas ref="barChart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Performance Radar</h2>
+                <canvas ref="radarChart"></canvas>
             </div>
         </div>
 
@@ -38,36 +48,36 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- グリッドカード -->
-        <div class="mt-6 grid grid-cols-2 md:grid-cols-6 gap-4">
-            <div v-for="n in 60" :key="n" class="bg-white h-24 rounded shadow flex items-center justify-center">
-                Card {{ n }}
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import {
+    Chart, LineController, LineElement, PointElement, LinearScale, Title,
+    CategoryScale, ArcElement, BarElement, BarController, PieController,
+    RadarController, RadialLinearScale
+} from 'chart.js'
 
-// 重い統計計算サンプル
-const stats = ref([])
+// Chart.js 登録
+Chart.register(
+    LineController, LineElement, PointElement, LinearScale, Title, CategoryScale,
+    ArcElement, BarElement, BarController, PieController, RadarController, RadialLinearScale
+)
+
 const lastUpdated = ref(new Date().toLocaleString())
 
-function generateStats() {
-    const labels = ['Users', 'Sales', 'Orders', 'Visits']
-    stats.value = labels.map(label => ({
-        label,
-        value: Math.floor(Math.random() * 10000),
-        trend: (Math.random() * 20 - 10).toFixed(1)
-    }))
-}
+// グラフ用の ref
+const lineChart = ref(null)
+const pieChart = ref(null)
+const barChart = ref(null)
+const radarChart = ref(null)
 
-// 大量のテーブルデータを生成
+// 表データ
 const rows = ref([])
+
 function generateRows() {
-    rows.value = Array.from({ length: 5000 }).map((_, i) => ({
+    rows.value = Array.from({ length: 2000 }).map((_, i) => ({
         id: i + 1,
         user: `User_${i + 1}`,
         action: ['Login', 'Purchase', 'Logout'][Math.floor(Math.random() * 3)],
@@ -75,8 +85,60 @@ function generateRows() {
     }))
 }
 
+function randomData(count, min = 0, max = 100) {
+    return Array.from({ length: count }).map(() => Math.floor(Math.random() * (max - min + 1)) + min)
+}
+
 onMounted(() => {
-    generateStats()
     generateRows()
+
+    new Chart(lineChart.value, {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 12 }).map((_, i) => `Month ${i + 1}`),
+            datasets: [{
+                label: 'Sales',
+                data: randomData(12, 100, 1000),
+                borderColor: 'rgb(75, 192, 192)',
+                fill: false
+            }]
+        }
+    })
+
+    new Chart(pieChart.value, {
+        type: 'pie',
+        data: {
+            labels: ['Product A', 'Product B', 'Product C'],
+            datasets: [{
+                data: randomData(3, 100, 500),
+                backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56']
+            }]
+        }
+    })
+
+    new Chart(barChart.value, {
+        type: 'bar',
+        data: {
+            labels: Array.from({ length: 12 }).map((_, i) => `Month ${i + 1}`),
+            datasets: [{
+                label: 'Revenue',
+                data: randomData(12, 1000, 5000),
+                backgroundColor: '#4BC0C0'
+            }]
+        }
+    })
+
+    new Chart(radarChart.value, {
+        type: 'radar',
+        data: {
+            labels: ['Quality', 'Speed', 'Support', 'Features', 'Usability'],
+            datasets: [{
+                label: 'Score',
+                data: randomData(5, 50, 100),
+                backgroundColor: 'rgba(179,181,198,0.2)',
+                borderColor: 'rgba(179,181,198,1)'
+            }]
+        }
+    })
 })
 </script>
