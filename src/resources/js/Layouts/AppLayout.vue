@@ -16,6 +16,15 @@
             </div>
 
             <nav class="py-3 text-sm">
+                <!-- Search -->
+                <Link
+                    href="/search"
+                    :class="navClass('/search')"
+                    @click="closeSidebarOnMobile"
+                >
+                    <span class="w-5 text-center">🔎</span>
+                    <span>Search</span>
+                </Link>
                 <!-- Dashboard -->
                 <Link
                     href="/dashboard"
@@ -45,6 +54,7 @@
                     <span class="w-5 text-center">📦</span>
                     <span>Items</span>
                 </Link>
+
             </nav>
         </aside>
 

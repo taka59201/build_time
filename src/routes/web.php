@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\ItemController;
 
 Route::get('/items', [ItemController::class, 'index'])->name('items.index');
+Route::get('/search', fn () => Inertia::render('Search/Index'))->name('search');
 /*
 Route::get('/', function () {
     return Inertia::render('Welcome', [
